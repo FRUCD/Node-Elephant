@@ -1,0 +1,82 @@
+% Author: Yi Lu
+% Source: The PGF/TikZ manual
+
+\documentclass{article}
+
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\usepackage[latin1]{inputenc}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\begin{document}
+% \begin{tikzpicture}[shorten >=1pt,->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,
+%                     thick, node distance=6cm]
+\begin{center}
+\begin{tikzpicture}[shorten >=1pt,->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, thick, node distance=6cm]
+  \tikzstyle{every state}=[fill=white,text=black]
+
+  \node[initial,state, accepting] (A)                    {A: Neutral};
+  \node[state]                    (B) [ below of=A,yshift=2cm] {B: Driving};
+  \node[state]                     (C) [left of=A] {C: Calibrating};
+  \node[state]                    (D) [below left of =B,yshift=2cm,xshift=-2cm] {D: Out of range};
+  \node[state]                    (E) [below  of =B] {E: Discrepancy};
+  \node[state]                    (F) [below right of =B,yshift=2cm,xshift=2cm] {F: Implausible};
+
+  \path (A) edge [bend left]            node {} (B)
+            edge [bend left]             node[above] {} (C)
+        (B) edge [bend left]           node  {} (A)
+            edge [bend left]             node[yshift=20pt] {} (E)
+            edge [bend left]             node[xshift=-170pt, yshift=-5pt] {} (D)
+            edge [bend left]             node[xshift=-220pt, yshift=-100pt] {} (F)
+        (C) edge [bend left]             node[below] {} (A)
+        (D) edge [bend left]             node {} (B)
+        (E) edge [bend left]             node {} (B)
+        (F) edge [bend left]             node[xshift=60pt, yshift=-90pt] {} (B);
+\end{tikzpicture}
+\end{center}
+
+\begin{tabular}{lll} \toprule
+    {Transition} & {Trigger condition} & {Operation} \\ \midrule
+    {A - B} & {Brake value more than 50\%} & {Send mmc start message to inverter} \\
+    {     } & {\textbf{and}} & {Start sending throttle data every 10ms} \\
+    {     } & {Start button pressed} \\ \midrule
+    {B - A} & {Start button pressed} & {Send mmc stop message to inverter} \\
+    {     } & { } & {Stop sending throttle data every 10ms} \\ \midrule
+    {A - C} & {Calibrate button pressed}  \\ \midrule
+    {C - A} & {Calibration Complete} \\ \midrule
+    {B - D} & {Brake out of range} & {Send mmc stop message to inverter} \\
+    {     } & {\textbf{or}} & {Stop sending throttle data every 10ms} \\
+    {     } & {Throttle out of range} \\ \midrule
+    {D - B} & {Brake in range} & {Send mmc start message to inverter} \\
+    {     } & {\textbf{and}} & {Start sending throttle data every 10ms} \\
+    {     } & {Throttle in rage} \\ \midrule
+    {B - E} & {Brake value off} & {Send mmc stop message to inverter} \\
+    {     } & {\textbf{or}} & {Stop sending throttle data every 10ms} \\
+    {     } & {Throttle value off} \\ \midrule
+    {E - B} & {Brake value in range} & {Send mmc start message to inverter} \\
+    {     } & {\textbf{and}} & {Start sending throttle data every 10ms} \\
+    {     } & {Throttle value in range} \\ \midrule
+    {B - F} & {Brake more than 10\%} & {Send mmc stop message to inverter} \\
+    {     } & {\textbf{and}} & {Stop sending throttle data every 10ms} \\
+    {     } & {Throttle value more than 25\%} \\ \midrule
+    {F - B} & {Throttle less than 5\%} & {Send mmc start message to inverter} \\
+    {     } & { } & {Start sending throttle data every 10ms} \\ \bottomrule
+
+
+    % 1  & 16.128 & +8.872 & 16.128 & 1.402 & 1.373 & -146.6 & -137.6 \\
+    % 2  & 3.442  & -2.509 & 3.442  & 0.299 & 0.343 & 133.2  & 152.4  \\
+    % 3  & 1.826  & -0.363 & 1.826  & 0.159 & 0.119 & 168.5  & -161.1 \\
+    % 4  & 0.993  & -0.429 & 0.993  & 0.086 & 0.08  & 25.6   & 90     \\ \midrule
+    % 5  & 1.29   & +0.099 & 1.29   & 0.112 & 0.097 & -175.6 & -114.7 \\
+    % 6  & 0.483  & -0.183 & 0.483  & 0.042 & 0.063 & 22.3   & 122.5  \\
+    % 7  & 0.766  & -0.475 & 0.766  & 0.067 & 0.039 & 141.6  & -122   \\
+    % 8  & 0.624  & +0.365 & 0.624  & 0.054 & 0.04  & -35.7  & 90     \\ \midrule
+    % 9  & 0.641  & -0.466 & 0.641  & 0.056 & 0.045 & 133.3  & -106.3 \\
+    % 10 & 0.45   & +0.421 & 0.45   & 0.039 & 0.034 & -69.4  & 110.9  \\
+    % 11 & 0.598  & -0.597 & 0.598  & 0.052 & 0.025 & 92.3   & -109.3 \\ \bottomrule
+\end{tabular}
+
+
+\end{document}

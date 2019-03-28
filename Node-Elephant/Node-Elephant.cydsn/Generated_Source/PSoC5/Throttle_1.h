@@ -1,14 +1,14 @@
 /*******************************************************************************
 * File Name: Throttle_1.h  
-* Version 2.5
+* Version 2.20
 *
 * Description:
-*  This file containts Control Register function prototypes and register defines
+*  This file contains Pin function prototypes and register defines
 *
 * Note:
 *
 ********************************************************************************
-* Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions, 
 * disclaimers, and limitations in the end user license agreement accompanying 
 * the software package with which this file was provided.
@@ -22,12 +22,6 @@
 #include "cypins.h"
 #include "Throttle_1_aliases.h"
 
-/* Check to see if required defines such as CY_PSOC5A are available */
-/* They are defined starting with cy_boot v3.0 */
-#if !defined (CY_PSOC5A)
-    #error Component cy_pins_v2_5 requires cy_boot v3.0 or later
-#endif /* (CY_PSOC5A) */
-
 /* APIs are not generated for P15[7:6] */
 #if !(CY_PSOC5A &&\
 	 Throttle_1__PORT == 15 && ((Throttle_1__MASK & 0xC0) != 0))
@@ -37,31 +31,64 @@
 *        Function Prototypes             
 ***************************************/    
 
-void    Throttle_1_Write(uint8 value) ;
-void    Throttle_1_SetDriveMode(uint8 mode) ;
-uint8   Throttle_1_ReadDataReg(void) ;
-uint8   Throttle_1_Read(void) ;
-uint8   Throttle_1_ClearInterrupt(void) ;
-
+/**
+* \addtogroup group_general
+* @{
+*/
+void    Throttle_1_Write(uint8 value);
+void    Throttle_1_SetDriveMode(uint8 mode);
+uint8   Throttle_1_ReadDataReg(void);
+uint8   Throttle_1_Read(void);
+void    Throttle_1_SetInterruptMode(uint16 position, uint16 mode);
+uint8   Throttle_1_ClearInterrupt(void);
+/** @} general */
 
 /***************************************
 *           API Constants        
 ***************************************/
-
-/* Drive Modes */
-#define Throttle_1_DM_ALG_HIZ         PIN_DM_ALG_HIZ
-#define Throttle_1_DM_DIG_HIZ         PIN_DM_DIG_HIZ
-#define Throttle_1_DM_RES_UP          PIN_DM_RES_UP
-#define Throttle_1_DM_RES_DWN         PIN_DM_RES_DWN
-#define Throttle_1_DM_OD_LO           PIN_DM_OD_LO
-#define Throttle_1_DM_OD_HI           PIN_DM_OD_HI
-#define Throttle_1_DM_STRONG          PIN_DM_STRONG
-#define Throttle_1_DM_RES_UPDWN       PIN_DM_RES_UPDWN
-
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup driveMode Drive mode constants
+     * \brief Constants to be passed as "mode" parameter in the Throttle_1_SetDriveMode() function.
+     *  @{
+     */
+        #define Throttle_1_DM_ALG_HIZ         PIN_DM_ALG_HIZ
+        #define Throttle_1_DM_DIG_HIZ         PIN_DM_DIG_HIZ
+        #define Throttle_1_DM_RES_UP          PIN_DM_RES_UP
+        #define Throttle_1_DM_RES_DWN         PIN_DM_RES_DWN
+        #define Throttle_1_DM_OD_LO           PIN_DM_OD_LO
+        #define Throttle_1_DM_OD_HI           PIN_DM_OD_HI
+        #define Throttle_1_DM_STRONG          PIN_DM_STRONG
+        #define Throttle_1_DM_RES_UPDWN       PIN_DM_RES_UPDWN
+    /** @} driveMode */
+/** @} group_constants */
+    
 /* Digital Port Constants */
 #define Throttle_1_MASK               Throttle_1__MASK
 #define Throttle_1_SHIFT              Throttle_1__SHIFT
 #define Throttle_1_WIDTH              1u
+
+/* Interrupt constants */
+#if defined(Throttle_1__INTSTAT)
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup intrMode Interrupt constants
+     * \brief Constants to be passed as "mode" parameter in Throttle_1_SetInterruptMode() function.
+     *  @{
+     */
+        #define Throttle_1_INTR_NONE      (uint16)(0x0000u)
+        #define Throttle_1_INTR_RISING    (uint16)(0x0001u)
+        #define Throttle_1_INTR_FALLING   (uint16)(0x0002u)
+        #define Throttle_1_INTR_BOTH      (uint16)(0x0003u) 
+    /** @} intrMode */
+/** @} group_constants */
+
+    #define Throttle_1_INTR_MASK      (0x01u) 
+#endif /* (Throttle_1__INTSTAT) */
 
 
 /***************************************
@@ -114,13 +141,21 @@ uint8   Throttle_1_ClearInterrupt(void) ;
 /* Sync Output Enable Registers */
 #define Throttle_1_PRTDSI__SYNC_OUT       (* (reg8 *) Throttle_1__PRTDSI__SYNC_OUT) 
 
+/* SIO registers */
+#if defined(Throttle_1__SIO_CFG)
+    #define Throttle_1_SIO_HYST_EN        (* (reg8 *) Throttle_1__SIO_HYST_EN)
+    #define Throttle_1_SIO_REG_HIFREQ     (* (reg8 *) Throttle_1__SIO_REG_HIFREQ)
+    #define Throttle_1_SIO_CFG            (* (reg8 *) Throttle_1__SIO_CFG)
+    #define Throttle_1_SIO_DIFF           (* (reg8 *) Throttle_1__SIO_DIFF)
+#endif /* (Throttle_1__SIO_CFG) */
 
-#if defined(Throttle_1__INTSTAT)  /* Interrupt Registers */
-
-    #define Throttle_1_INTSTAT                (* (reg8 *) Throttle_1__INTSTAT)
-    #define Throttle_1_SNAP                   (* (reg8 *) Throttle_1__SNAP)
-
-#endif /* Interrupt Registers */
+/* Interrupt Registers */
+#if defined(Throttle_1__INTSTAT)
+    #define Throttle_1_INTSTAT            (* (reg8 *) Throttle_1__INTSTAT)
+    #define Throttle_1_SNAP               (* (reg8 *) Throttle_1__SNAP)
+    
+	#define Throttle_1_0_INTTYPE_REG 		(* (reg8 *) Throttle_1__0__INTTYPE)
+#endif /* (Throttle_1__INTSTAT) */
 
 #endif /* CY_PSOC5A... */
 

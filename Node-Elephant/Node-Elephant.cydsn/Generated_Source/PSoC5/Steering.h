@@ -1,14 +1,14 @@
 /*******************************************************************************
 * File Name: Steering.h  
-* Version 2.5
+* Version 2.20
 *
 * Description:
-*  This file containts Control Register function prototypes and register defines
+*  This file contains Pin function prototypes and register defines
 *
 * Note:
 *
 ********************************************************************************
-* Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions, 
 * disclaimers, and limitations in the end user license agreement accompanying 
 * the software package with which this file was provided.
@@ -22,12 +22,6 @@
 #include "cypins.h"
 #include "Steering_aliases.h"
 
-/* Check to see if required defines such as CY_PSOC5A are available */
-/* They are defined starting with cy_boot v3.0 */
-#if !defined (CY_PSOC5A)
-    #error Component cy_pins_v2_5 requires cy_boot v3.0 or later
-#endif /* (CY_PSOC5A) */
-
 /* APIs are not generated for P15[7:6] */
 #if !(CY_PSOC5A &&\
 	 Steering__PORT == 15 && ((Steering__MASK & 0xC0) != 0))
@@ -37,31 +31,64 @@
 *        Function Prototypes             
 ***************************************/    
 
-void    Steering_Write(uint8 value) ;
-void    Steering_SetDriveMode(uint8 mode) ;
-uint8   Steering_ReadDataReg(void) ;
-uint8   Steering_Read(void) ;
-uint8   Steering_ClearInterrupt(void) ;
-
+/**
+* \addtogroup group_general
+* @{
+*/
+void    Steering_Write(uint8 value);
+void    Steering_SetDriveMode(uint8 mode);
+uint8   Steering_ReadDataReg(void);
+uint8   Steering_Read(void);
+void    Steering_SetInterruptMode(uint16 position, uint16 mode);
+uint8   Steering_ClearInterrupt(void);
+/** @} general */
 
 /***************************************
 *           API Constants        
 ***************************************/
-
-/* Drive Modes */
-#define Steering_DM_ALG_HIZ         PIN_DM_ALG_HIZ
-#define Steering_DM_DIG_HIZ         PIN_DM_DIG_HIZ
-#define Steering_DM_RES_UP          PIN_DM_RES_UP
-#define Steering_DM_RES_DWN         PIN_DM_RES_DWN
-#define Steering_DM_OD_LO           PIN_DM_OD_LO
-#define Steering_DM_OD_HI           PIN_DM_OD_HI
-#define Steering_DM_STRONG          PIN_DM_STRONG
-#define Steering_DM_RES_UPDWN       PIN_DM_RES_UPDWN
-
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup driveMode Drive mode constants
+     * \brief Constants to be passed as "mode" parameter in the Steering_SetDriveMode() function.
+     *  @{
+     */
+        #define Steering_DM_ALG_HIZ         PIN_DM_ALG_HIZ
+        #define Steering_DM_DIG_HIZ         PIN_DM_DIG_HIZ
+        #define Steering_DM_RES_UP          PIN_DM_RES_UP
+        #define Steering_DM_RES_DWN         PIN_DM_RES_DWN
+        #define Steering_DM_OD_LO           PIN_DM_OD_LO
+        #define Steering_DM_OD_HI           PIN_DM_OD_HI
+        #define Steering_DM_STRONG          PIN_DM_STRONG
+        #define Steering_DM_RES_UPDWN       PIN_DM_RES_UPDWN
+    /** @} driveMode */
+/** @} group_constants */
+    
 /* Digital Port Constants */
 #define Steering_MASK               Steering__MASK
 #define Steering_SHIFT              Steering__SHIFT
 #define Steering_WIDTH              1u
+
+/* Interrupt constants */
+#if defined(Steering__INTSTAT)
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup intrMode Interrupt constants
+     * \brief Constants to be passed as "mode" parameter in Steering_SetInterruptMode() function.
+     *  @{
+     */
+        #define Steering_INTR_NONE      (uint16)(0x0000u)
+        #define Steering_INTR_RISING    (uint16)(0x0001u)
+        #define Steering_INTR_FALLING   (uint16)(0x0002u)
+        #define Steering_INTR_BOTH      (uint16)(0x0003u) 
+    /** @} intrMode */
+/** @} group_constants */
+
+    #define Steering_INTR_MASK      (0x01u) 
+#endif /* (Steering__INTSTAT) */
 
 
 /***************************************
@@ -114,13 +141,21 @@ uint8   Steering_ClearInterrupt(void) ;
 /* Sync Output Enable Registers */
 #define Steering_PRTDSI__SYNC_OUT       (* (reg8 *) Steering__PRTDSI__SYNC_OUT) 
 
+/* SIO registers */
+#if defined(Steering__SIO_CFG)
+    #define Steering_SIO_HYST_EN        (* (reg8 *) Steering__SIO_HYST_EN)
+    #define Steering_SIO_REG_HIFREQ     (* (reg8 *) Steering__SIO_REG_HIFREQ)
+    #define Steering_SIO_CFG            (* (reg8 *) Steering__SIO_CFG)
+    #define Steering_SIO_DIFF           (* (reg8 *) Steering__SIO_DIFF)
+#endif /* (Steering__SIO_CFG) */
 
-#if defined(Steering__INTSTAT)  /* Interrupt Registers */
-
-    #define Steering_INTSTAT                (* (reg8 *) Steering__INTSTAT)
-    #define Steering_SNAP                   (* (reg8 *) Steering__SNAP)
-
-#endif /* Interrupt Registers */
+/* Interrupt Registers */
+#if defined(Steering__INTSTAT)
+    #define Steering_INTSTAT            (* (reg8 *) Steering__INTSTAT)
+    #define Steering_SNAP               (* (reg8 *) Steering__SNAP)
+    
+	#define Steering_0_INTTYPE_REG 		(* (reg8 *) Steering__0__INTTYPE)
+#endif /* (Steering__INTSTAT) */
 
 #endif /* CY_PSOC5A... */
 

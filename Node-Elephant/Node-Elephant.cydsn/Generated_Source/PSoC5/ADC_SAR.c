@@ -1,6 +1,6 @@
 /*******************************************************************************
 * File Name: ADC_SAR.c
-* Version 1.10
+* Version 2.10
 *
 * Description:
 *  This file provides the API functionality of the ADC SAR Sequencer Component
@@ -9,201 +9,23 @@
 *  None
 *
 ********************************************************************************
-* Copyright 2012-2013, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2012-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions,
 * disclaimers, and limitations in the end user license agreement accompanying
 * the software package with which this file was provided.
 *******************************************************************************/
 
 #include "ADC_SAR.h"
-#include "ADC_SAR_SAR.h"
 #if(ADC_SAR_IRQ_REMOVE == 0u)
-    #include <ADC_SAR_IRQ.h>
+    #include "ADC_SAR_IRQ.h"
 #endif   /* End ADC_SAR_IRQ_REMOVE */
 
-static void ADC_SAR_TempBufDmaInit(void);
-static void ADC_SAR_TempBufDmaRelease(void);
-
-static void ADC_SAR_FinalBufDmaInit(void);
-static void ADC_SAR_FinalBufDmaRelease(void);
-
-static int16 ADC_SAR_tempArray[ADC_SAR_NUMBER_OF_CHANNELS];
 int16  ADC_SAR_finalArray[ADC_SAR_NUMBER_OF_CHANNELS];
 uint32 ADC_SAR_initVar = 0u;
 static uint8 ADC_SAR_tempChan;
 static uint8 ADC_SAR_finalChan;
-static uint8 ADC_SAR_tempTD;
-static uint8 ADC_SAR_finalTD;
-
-
-/*******************************************************************************
-* Function Name: ADC_SAR_TempBufDmaInit()
-********************************************************************************
-*
-* Summary:
-*  Provides initialization procedure for the TempBuf DMA
-*
-* Parameters:
-*  None.
-*
-* Return:
-*  None.
-*
-* Side Effects:
-*  None.
-*
-* Reentrant:
-*  No.
-*
-*******************************************************************************/
-static void ADC_SAR_TempBufDmaInit(void)
-{
-    ADC_SAR_tempTD = CyDmaTdAllocate();
-
-    /* Configure this Td as follows:
-    *  - The TD is looping on itself
-    *  - Increment the destination address, but not the source address
-    */
-    (void) CyDmaTdSetConfiguration(ADC_SAR_tempTD, ADC_SAR_TEMP_TRANSFER_COUNT,
-        ADC_SAR_tempTD, ((uint8)ADC_SAR_TempBuf__TD_TERMOUT_EN | (uint8)TD_INC_DST_ADR));
-
-    /* From the SAR to the TempArray */
-    (void) CyDmaTdSetAddress(ADC_SAR_tempTD, (uint16)(LO16((uint32)ADC_SAR_SAR_DATA_ADDR_0)),
-        (uint16)(LO16((uint32)ADC_SAR_tempArray)));
-
-    /* Associate the TD with the channel */
-    (void) CyDmaChSetInitialTd(ADC_SAR_tempChan, ADC_SAR_tempTD);
-}
-
-
-/*******************************************************************************
-* Function Name: ADC_SAR_TempBufDmaRelease()
-********************************************************************************
-*
-* Summary:
-*  Provides release procedure for the TempBuf DMA
-*
-* Parameters:
-*  None.
-*
-* Return:
-*  None.
-*
-* Side Effects:
-*  None.
-*
-* Reentrant:
-*  No.
-*
-*******************************************************************************/
-static void ADC_SAR_TempBufDmaRelease(void)
-{
-    (void) CyDmaChDisable(ADC_SAR_tempChan);
-
-    /* Clear any potential DMA requests and re-reset TD pointers */
-    while(0u != (CY_DMA_CH_STRUCT_PTR[ADC_SAR_tempChan].basic_status[0u] & CY_DMA_STATUS_TD_ACTIVE))
-    {
-        ; /* Wait for to be cleared */
-    }
-
-    (void) CyDmaChSetRequest(ADC_SAR_tempChan, CY_DMA_CPU_TERM_CHAIN);
-    (void) CyDmaChEnable    (ADC_SAR_tempChan, 1u);
-
-    while(0u != (CY_DMA_CH_STRUCT_PTR[ADC_SAR_tempChan].basic_cfg[0u] & CY_DMA_STATUS_CHAIN_ACTIVE))
-        {
-            ; /* Wait for to be cleared */
-        }
-
-    /* Release allocated TD and mark it as invalid */
-    CyDmaTdFree(ADC_SAR_tempTD);
-    ADC_SAR_tempTD = CY_DMA_INVALID_TD;
-
-}
-
-
-/****************************************************************************
-* Function Name: ADC_SAR_FinalBufDmaInit()
-*****************************************************************************
-*
-* Summary:
-*  Provides initialization procedure for the FinalBuf DMA
-*
-* Parameters:
-*  None.
-*
-* Return:
-*  None.
-*
-* Side Effects:
-*  None.
-*
-* Reentrant:
-*  No.
-*
-****************************************************************************/
-static void ADC_SAR_FinalBufDmaInit(void)
-{
-    ADC_SAR_finalTD = CyDmaTdAllocate();
-
-    /* Configure this Td as follows:
-    *  - The TD is looping on itself
-    *  - Increment the source and destination address
-    */
-    (void) CyDmaTdSetConfiguration(ADC_SAR_finalTD, (ADC_SAR_FINAL_BYTES_PER_BURST),
-        ADC_SAR_finalTD, ((uint8)(ADC_SAR_FinalBuf__TD_TERMOUT_EN) | (uint8)TD_INC_SRC_ADR |
-            (uint8)TD_INC_DST_ADR));
-
-    /* From the the TempArray to Final Array */
-    (void) CyDmaTdSetAddress(ADC_SAR_finalTD, (uint16)(LO16((uint32)ADC_SAR_tempArray)),
-        (uint16)(LO16((uint32)ADC_SAR_finalArray)));
-
-    /* Associate the TD with the channel */
-    (void) CyDmaChSetInitialTd(ADC_SAR_finalChan, ADC_SAR_finalTD);
-}
-
-
-/****************************************************************************
-* Function Name: ADC_SAR_FinalBufDmaRelease()
-*****************************************************************************
-*
-* Summary:
-*  Provides release procedure for the FinalBuf DMA.
-*
-* Parameters:
-*  None.
-*
-* Return:
-*  None.
-*
-* Side Effects:
-*  None.
-*
-* Reentrant:
-*  No.
-*
-****************************************************************************/
-static void ADC_SAR_FinalBufDmaRelease(void)
-{
-    (void) CyDmaChDisable(ADC_SAR_finalChan);
-
-    /* Clear any potential DMA requests and re-reset TD pointers */
-    while(0u != (CY_DMA_CH_STRUCT_PTR[ADC_SAR_finalChan].basic_status[0u] & CY_DMA_STATUS_TD_ACTIVE))
-    {
-        ; /* Wait for to be cleared */
-    }
-
-    (void) CyDmaChSetRequest(ADC_SAR_finalChan, CY_DMA_CPU_TERM_CHAIN);
-    (void) CyDmaChEnable    (ADC_SAR_finalChan, 1u);
-
-    while(0u != (CY_DMA_CH_STRUCT_PTR[ADC_SAR_finalChan].basic_cfg[0u] & CY_DMA_STATUS_CHAIN_ACTIVE))
-        {
-            ; /* Wait for to be cleared */
-        }
-
-    /* Release allocated TD and mark it as invalid */
-    CyDmaTdFree(ADC_SAR_finalTD);
-    ADC_SAR_finalTD = CY_DMA_INVALID_TD;
-}
+static uint8 ADC_SAR_tempTD = CY_DMA_INVALID_TD;
+static uint8 ADC_SAR_finalTD = CY_DMA_INVALID_TD;
 
 
 /****************************************************************************
@@ -228,18 +50,15 @@ static void ADC_SAR_FinalBufDmaRelease(void)
 ****************************************************************************/
 void ADC_SAR_Disable(void)
 {
-    uint8 enableInterrupts;
-
     ADC_SAR_CONTROL_REG &= ((uint8)(~ADC_SAR_BASE_COMPONENT_ENABLE));
 
-    /* Disable Counter */
-    enableInterrupts = CyEnterCriticalSection();
-    ADC_SAR_CYCLE_COUNTER_AUX_CONTROL_REG &= ((uint8)(~ADC_SAR_CYCLE_COUNTER_ENABLE));
-    CyExitCriticalSection(enableInterrupts);
-    ADC_SAR_COUNT_REG = 0u;
+    (void) CyDmaChDisable(ADC_SAR_tempChan);
+    CyDmaTdFree(ADC_SAR_tempTD);
+    ADC_SAR_tempTD = CY_DMA_INVALID_TD;
 
-    ADC_SAR_TempBufDmaRelease();
-    ADC_SAR_FinalBufDmaRelease();
+    (void) CyDmaChDisable(ADC_SAR_finalChan);
+    CyDmaTdFree(ADC_SAR_finalTD);
+    ADC_SAR_finalTD = CY_DMA_INVALID_TD;
 }
 
 
@@ -268,11 +87,11 @@ void ADC_SAR_Init(void)
         ADC_SAR_REQUEST_PER_BURST, (uint16)(HI16(CYDEV_PERIPH_BASE)), (uint16)(HI16(CYDEV_SRAM_BASE)));
 
     /* Init DMA, (ADC_SAR_NUMBER_OF_CHANNELS << 1u) bytes bursts, each burst requires a request */
-    ADC_SAR_finalChan = ADC_SAR_FinalBuf_DmaInitialize(ADC_SAR_FINAL_BYTES_PER_BURST,
+    ADC_SAR_finalChan = ADC_SAR_FinalBuf_DmaInitialize((uint8)ADC_SAR_FINAL_BYTES_PER_BURST,
         ADC_SAR_REQUEST_PER_BURST, (uint16)(HI16(CYDEV_SRAM_BASE)), (uint16)(HI16(CYDEV_SRAM_BASE)));
 
     #if(ADC_SAR_IRQ_REMOVE == 0u)
-        /* Set the ISR to point to the ADC_SAR_SEQ_1_IRQ Interrupt. */
+        /* Set the ISR to point to the ADC_SAR_IRQ Interrupt. */
         ADC_SAR_IRQ_SetVector(&ADC_SAR_ISR);
         /* Set the priority. */
         ADC_SAR_IRQ_SetPriority((uint8)ADC_SAR_INTC_NUMBER);
@@ -305,9 +124,56 @@ void ADC_SAR_Enable(void)
 {
     uint8 enableInterrupts;
 
-    ADC_SAR_FinalBufDmaInit();
-    ADC_SAR_TempBufDmaInit();
+    static int16 ADC_SAR_tempArray[ADC_SAR_NUMBER_OF_CHANNELS];
+    
+    (void)CyDmaClearPendingDrq(ADC_SAR_tempChan);
+    (void)CyDmaClearPendingDrq(ADC_SAR_finalChan);
+    
+    
+    /* Provides initialization procedure for the TempBuf DMA
+    * Configure this Td as follows:
+    *  - The TD is looping on itself
+    *  - Increment the destination address, but not the source address
+    */
 
+    if (ADC_SAR_tempTD == DMA_INVALID_TD)
+    {
+        ADC_SAR_tempTD = CyDmaTdAllocate();
+    }
+
+    (void) CyDmaTdSetConfiguration(ADC_SAR_tempTD, ADC_SAR_TEMP_TRANSFER_COUNT,
+        ADC_SAR_tempTD, ((uint8)ADC_SAR_TempBuf__TD_TERMOUT_EN | (uint8)TD_INC_DST_ADR));
+
+    /* From the SAR to the TempArray */
+    (void) CyDmaTdSetAddress(ADC_SAR_tempTD, (uint16)(LO16((uint32)ADC_SAR_SAR_DATA_ADDR_0)),
+        (uint16)(LO16((uint32)ADC_SAR_tempArray)));
+
+    /* Associate the TD with the channel */
+    (void) CyDmaChSetInitialTd(ADC_SAR_tempChan, ADC_SAR_tempTD);
+
+
+    /* Provides initialization procedure for the FinalBuf DMA
+    * Configure this Td as follows:
+    *  - The TD is looping on itself
+    *  - Increment the source and destination address
+    */
+
+    if (ADC_SAR_finalTD == DMA_INVALID_TD)
+    {
+        ADC_SAR_finalTD = CyDmaTdAllocate();
+    }
+    
+    (void) CyDmaTdSetConfiguration(ADC_SAR_finalTD, (ADC_SAR_FINAL_BYTES_PER_BURST),
+        ADC_SAR_finalTD, ((uint8)(ADC_SAR_FinalBuf__TD_TERMOUT_EN) | (uint8)TD_INC_SRC_ADR |
+            (uint8)TD_INC_DST_ADR));
+
+    /* From the the TempArray to Final Array */
+    (void) CyDmaTdSetAddress(ADC_SAR_finalTD, (uint16)(LO16((uint32)ADC_SAR_tempArray)),
+        (uint16)(LO16((uint32)ADC_SAR_finalArray)));
+
+    /* Associate the TD with the channel */
+    (void) CyDmaChSetInitialTd(ADC_SAR_finalChan, ADC_SAR_finalTD);
+    
     (void) CyDmaChEnable(ADC_SAR_tempChan, 1u);
     (void) CyDmaChEnable(ADC_SAR_finalChan, 1u);
 
@@ -341,7 +207,8 @@ void ADC_SAR_Enable(void)
 *  None.
 *
 * Side Effects:
-*  None.
+*  If the initVar variable is already set, this function only calls the 
+*  ADC_SAR_Enable() function
 *
 * Reentrant:
 *  No.
@@ -355,10 +222,9 @@ void ADC_SAR_Start(void)
         ADC_SAR_initVar = 1u;
     }
 
-    ADC_SAR_Enable();
     ADC_SAR_SAR_Start();
+    ADC_SAR_Enable();
     (void) CY_GET_REG8(ADC_SAR_STATUS_PTR);
-
 }
 
 
@@ -406,7 +272,7 @@ void ADC_SAR_Stop(void)
     *  None.
     *
     * Side Effects:
-    *  None.
+    *  Calling ADC_SAR_StartConvert() disables the external SOC pin.
     *
     * Reentrant:
     *  No.
@@ -443,7 +309,9 @@ void ADC_SAR_Stop(void)
     *  None.
     *
     * Side Effects:
-    *  None.
+    *  In free-running and software trigger mode, this function sets a software 
+    *  version of the SOC to low level and switches the SOC source to hardware SOC 
+    *  input (Hardware trigger).
     *
     * Reentrant:
     *  No.
@@ -466,13 +334,20 @@ void ADC_SAR_Stop(void)
 *  for the case of multiple channels
 *
 * Parameters:
-*  None.
+*  retMode: Check conversion return mode
+*   Values:
+*         - ADC_SAR_RETURN_STATUS      - Immediately returns the 
+*                                                 status
+*         - ADC_SAR_WAIT_FOR_RESULT    - Does not return a result 
+*                                                 until the conversion 
+*                                                 is complete
 *
 * Return:
-*  None.
+*  If a nonzero value is returned, the last conversion is complete. If the 
+*  returned value is zero, the ADC_SAR_Seq is still calculating the last result
 *
 * Side Effects:
-*  None.
+*  This function reads the end of conversion status, which is cleared on read
 *
 * Reentrant:
 *  No.
@@ -499,13 +374,14 @@ uint32 ADC_SAR_IsEndConversion(uint8 retMode)
 *  Returns the ADC result for channel chan
 *
 * Parameters:
-*  None.
+*  chan: The ADC channel in which to return the result. The first channel is 0 
+*        and the last channel is the total number of channels - 1
 *
 * Return:
-*  None.
+*  Returns converted data as a signed 16-bit integer
 *
 * Side Effects:
-*  None.
+*  Converts the ADC counts to the 2's complement form
 *
 * Reentrant:
 *  No.
@@ -528,10 +404,10 @@ int16 ADC_SAR_GetResult16(uint16 chan)
 *  None.
 *
 * Return:
-*  None.
+*  The last ADC conversion result
 *
 * Side Effects:
-*  None.
+*  Converts the ADC counts to the 2's complement form
 *
 * Reentrant:
 *  No.
@@ -553,13 +429,16 @@ int16 ADC_SAR_GetAdcResult(void)
 *  given reading before calculating the voltage conversion
 *
 * Parameters:
-*  None.
+*  offset: This value is measured when the inputs are shorted or connected to
+*  the same input voltage
 *
 * Return:
 *  None.
 *
 * Side Effects:
-*  None.
+*  Affects ADC_SAR_CountsTo_Volts(), 
+*  ADC_SAR_CountsTo_mVolts(), and ADC_SAR_CountsTo_uVolts() 
+*  by subtracting the given offset.
 *
 * Reentrant:
 *  No.
@@ -591,22 +470,21 @@ void ADC_SAR_SetOffset(int32 offset)
 * Side Effects:
 *  The ADC_SAR_Seq resolution cannot be changed during a conversion cycle. The
 *  recommended best practice is to stop conversions with
-*  ADC_SAR_Seq_StopConvert(), change the resolution, then restart the
-*  conversions with ADC_SAR_Seq_StartConvert().
+*  ADC_SAR_StopConvert(), change the resolution, then restart the
+*  conversions with ADC_SAR_StartConvert().
 *  If you decide not to stop conversions before calling this API, you
-*  should use ADC_SAR_Seq_IsEndConversion() to wait until conversion is complete
-*  before changing the resolution.
+*  should use ADC_SAR_IsEndConversion() to wait until conversion is 
+*  complete  before changing the resolution.
 *  If you call ADC_SetResolution() during a conversion, the resolution will
 *  not be changed until the current conversion is complete. Data will not be
 *  available in the new resolution for another 6 + "New Resolution(in bits)"
 *  clock cycles.
 *  You may need add a delay of this number of clock cycles after
-*  ADC_SAR_Seq_SetResolution() is called before data is valid again.
-*  Affects ADC_SAR_Seq_CountsTo_Volts(), ADC_SAR_Seq_CountsTo_mVolts(), and
-*  ADC_SAR_Seq_CountsTo_uVolts() by calculating the correct conversion between
-*  ADC
-*  counts and the applied input voltage. Calculation depends on resolution,
-*  input range, and voltage reference.
+*  ADC_SAR_SetResolution() is called before data is valid again.
+*  Affects ADC_SAR_CountsTo_Volts(), ADC_SAR_CountsTo_mVolts(), 
+*  and ADC_SAR_CountsTo_uVolts() by calculating the correct conversion 
+*  between ADC counts and the applied input voltage. Calculation depends on 
+*  resolution, input range, and voltage reference.
 *
 *******************************************************************************/
 void ADC_SAR_SetResolution(uint8 resolution)
@@ -623,7 +501,7 @@ void ADC_SAR_SetResolution(uint8 resolution)
 *  Sets the ADC gain in counts per volt for the voltage conversion
 *
 * Parameters:
-*  None.
+*  adcGain: counts per volt
 *
 * Return:
 *  None.
@@ -657,8 +535,13 @@ void ADC_SAR_SetGain(int32 adcGain)
 * Return:
 *  None.
 *
-* Global Variables:
-*  None.
+* Side Effects:
+*  Affects ADC_SAR_CountsTo_Volts(), ADC_SAR_CountsTo_mVolts(),
+*  ADC_SAR_CountsTo_uVolts() by supplying the correct conversion 
+*  between ADC counts and the applied input voltage
+*
+* Reentrant:
+*  No.
 *
 *******************************************************************************/
 void ADC_SAR_SetScaledGain(int32 adcGain)
@@ -675,10 +558,10 @@ void ADC_SAR_SetScaledGain(int32 adcGain)
 *  Converts the ADC output to mVolts as a 32-bit integer
 *
 * Parameters:
-*  None.
+*  adcCounts: Result from the ADC_SAR_Seq conversion
 *
 * Return:
-*  None.
+*  Result in mV
 *
 * Side Effects:
 *  None.
@@ -701,10 +584,10 @@ int32 ADC_SAR_CountsTo_mVolts(int16 adcCounts)
 *  Converts the ADC output to uVolts as a 32-bit integer
 *
 * Parameters:
-*  None.
+*  adcCounts: Result from the ADC conversion
 *
 * Return:
-*  None.
+*  Result in uV
 *
 * Side Effects:
 *  None.
@@ -727,10 +610,10 @@ int32 ADC_SAR_CountsTo_uVolts(int16 adcCounts)
 *  Converts the ADC output to Volts as a floating point number
 *
 * Parameters:
-*  None.
+*  adcCounts: Result from the ADC_SAR_Seq conversion
 *
 * Return:
-*  None.
+*  Result in volts
 *
 * Side Effects:
 *  None.

@@ -1,6 +1,6 @@
 /*******************************************************************************
 * File Name: ADC_SAR.h
-* Version 1.10
+* Version 2.10
 *
 * Description:
 *  Contains the function prototypes, constants and register definition of the
@@ -10,7 +10,7 @@
 *  None
 *
 ********************************************************************************
-* Copyright 2012-2013, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2012-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions,
 * disclaimers, and limitations in the end user license agreement accompanying
 * the software package with which this file was provided.
@@ -24,20 +24,19 @@
 #include "CyLib.h"
 #include "ADC_SAR_TempBuf_dma.h"
 #include "ADC_SAR_FinalBuf_dma.h"
+#include "ADC_SAR_SAR.h"
 
 #define ADC_SAR_NUMBER_OF_CHANNELS    (5u)
 #define ADC_SAR_SAMPLE_MODE           (0u)
+#define ADC_SAR_CLOCK_SOURCE          (0u)
 
 extern int16  ADC_SAR_finalArray[ADC_SAR_NUMBER_OF_CHANNELS];
 extern uint32 ADC_SAR_initVar;
 
-/* references to ADC_SAR global variables */
-extern volatile int16 ADC_SAR_SAR_shift;
-
 /* Check to see if required defines such as CY_PSOC5A are available */
 /* They are defined starting with cy_boot v3.0 */
 #if !defined (CY_PSOC5A)
-    #error Component ADC_SAR_SEQ_v1_10 requires cy_boot v3.0 or later
+    #error Component ADC_SAR_SEQ_v2_10 requires cy_boot v3.0 or later
 #endif /* (CY_PSOC5A) */
 
 
@@ -149,6 +148,10 @@ void ADC_SAR_SetGain(int32 adcGain);
 #define ADC_SAR_SAMPLE_MODE_FREE_RUNNING    (0x00u)
 #define ADC_SAR_SAMPLE_MODE_SW_TRIGGERED    (0x01u)
 #define ADC_SAR_SAMPLE_MODE_HW_TRIGGERED    (0x02u)
+
+/* Define for Clock Source  */
+#define ADC_SAR_CLOCK_INTERNAL              (0x00u)
+#define ADC_SAR_CLOCK_EXTERNAL              (0x01u)
 
 
 /***************************************

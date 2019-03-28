@@ -1,14 +1,14 @@
 /*******************************************************************************
 * File Name: Button.h  
-* Version 2.5
+* Version 2.20
 *
 * Description:
-*  This file containts Control Register function prototypes and register defines
+*  This file contains Pin function prototypes and register defines
 *
 * Note:
 *
 ********************************************************************************
-* Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions, 
 * disclaimers, and limitations in the end user license agreement accompanying 
 * the software package with which this file was provided.
@@ -22,12 +22,6 @@
 #include "cypins.h"
 #include "Button_aliases.h"
 
-/* Check to see if required defines such as CY_PSOC5A are available */
-/* They are defined starting with cy_boot v3.0 */
-#if !defined (CY_PSOC5A)
-    #error Component cy_pins_v2_5 requires cy_boot v3.0 or later
-#endif /* (CY_PSOC5A) */
-
 /* APIs are not generated for P15[7:6] */
 #if !(CY_PSOC5A &&\
 	 Button__PORT == 15 && ((Button__MASK & 0xC0) != 0))
@@ -37,31 +31,64 @@
 *        Function Prototypes             
 ***************************************/    
 
-void    Button_Write(uint8 value) ;
-void    Button_SetDriveMode(uint8 mode) ;
-uint8   Button_ReadDataReg(void) ;
-uint8   Button_Read(void) ;
-uint8   Button_ClearInterrupt(void) ;
-
+/**
+* \addtogroup group_general
+* @{
+*/
+void    Button_Write(uint8 value);
+void    Button_SetDriveMode(uint8 mode);
+uint8   Button_ReadDataReg(void);
+uint8   Button_Read(void);
+void    Button_SetInterruptMode(uint16 position, uint16 mode);
+uint8   Button_ClearInterrupt(void);
+/** @} general */
 
 /***************************************
 *           API Constants        
 ***************************************/
-
-/* Drive Modes */
-#define Button_DM_ALG_HIZ         PIN_DM_ALG_HIZ
-#define Button_DM_DIG_HIZ         PIN_DM_DIG_HIZ
-#define Button_DM_RES_UP          PIN_DM_RES_UP
-#define Button_DM_RES_DWN         PIN_DM_RES_DWN
-#define Button_DM_OD_LO           PIN_DM_OD_LO
-#define Button_DM_OD_HI           PIN_DM_OD_HI
-#define Button_DM_STRONG          PIN_DM_STRONG
-#define Button_DM_RES_UPDWN       PIN_DM_RES_UPDWN
-
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup driveMode Drive mode constants
+     * \brief Constants to be passed as "mode" parameter in the Button_SetDriveMode() function.
+     *  @{
+     */
+        #define Button_DM_ALG_HIZ         PIN_DM_ALG_HIZ
+        #define Button_DM_DIG_HIZ         PIN_DM_DIG_HIZ
+        #define Button_DM_RES_UP          PIN_DM_RES_UP
+        #define Button_DM_RES_DWN         PIN_DM_RES_DWN
+        #define Button_DM_OD_LO           PIN_DM_OD_LO
+        #define Button_DM_OD_HI           PIN_DM_OD_HI
+        #define Button_DM_STRONG          PIN_DM_STRONG
+        #define Button_DM_RES_UPDWN       PIN_DM_RES_UPDWN
+    /** @} driveMode */
+/** @} group_constants */
+    
 /* Digital Port Constants */
 #define Button_MASK               Button__MASK
 #define Button_SHIFT              Button__SHIFT
 #define Button_WIDTH              1u
+
+/* Interrupt constants */
+#if defined(Button__INTSTAT)
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup intrMode Interrupt constants
+     * \brief Constants to be passed as "mode" parameter in Button_SetInterruptMode() function.
+     *  @{
+     */
+        #define Button_INTR_NONE      (uint16)(0x0000u)
+        #define Button_INTR_RISING    (uint16)(0x0001u)
+        #define Button_INTR_FALLING   (uint16)(0x0002u)
+        #define Button_INTR_BOTH      (uint16)(0x0003u) 
+    /** @} intrMode */
+/** @} group_constants */
+
+    #define Button_INTR_MASK      (0x01u) 
+#endif /* (Button__INTSTAT) */
 
 
 /***************************************
@@ -114,13 +141,21 @@ uint8   Button_ClearInterrupt(void) ;
 /* Sync Output Enable Registers */
 #define Button_PRTDSI__SYNC_OUT       (* (reg8 *) Button__PRTDSI__SYNC_OUT) 
 
+/* SIO registers */
+#if defined(Button__SIO_CFG)
+    #define Button_SIO_HYST_EN        (* (reg8 *) Button__SIO_HYST_EN)
+    #define Button_SIO_REG_HIFREQ     (* (reg8 *) Button__SIO_REG_HIFREQ)
+    #define Button_SIO_CFG            (* (reg8 *) Button__SIO_CFG)
+    #define Button_SIO_DIFF           (* (reg8 *) Button__SIO_DIFF)
+#endif /* (Button__SIO_CFG) */
 
-#if defined(Button__INTSTAT)  /* Interrupt Registers */
-
-    #define Button_INTSTAT                (* (reg8 *) Button__INTSTAT)
-    #define Button_SNAP                   (* (reg8 *) Button__SNAP)
-
-#endif /* Interrupt Registers */
+/* Interrupt Registers */
+#if defined(Button__INTSTAT)
+    #define Button_INTSTAT            (* (reg8 *) Button__INTSTAT)
+    #define Button_SNAP               (* (reg8 *) Button__SNAP)
+    
+	#define Button_0_INTTYPE_REG 		(* (reg8 *) Button__0__INTTYPE)
+#endif /* (Button__INTSTAT) */
 
 #endif /* CY_PSOC5A... */
 

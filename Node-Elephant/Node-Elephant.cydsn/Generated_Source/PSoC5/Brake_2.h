@@ -1,14 +1,14 @@
 /*******************************************************************************
 * File Name: Brake_2.h  
-* Version 2.5
+* Version 2.20
 *
 * Description:
-*  This file containts Control Register function prototypes and register defines
+*  This file contains Pin function prototypes and register defines
 *
 * Note:
 *
 ********************************************************************************
-* Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions, 
 * disclaimers, and limitations in the end user license agreement accompanying 
 * the software package with which this file was provided.
@@ -22,12 +22,6 @@
 #include "cypins.h"
 #include "Brake_2_aliases.h"
 
-/* Check to see if required defines such as CY_PSOC5A are available */
-/* They are defined starting with cy_boot v3.0 */
-#if !defined (CY_PSOC5A)
-    #error Component cy_pins_v2_5 requires cy_boot v3.0 or later
-#endif /* (CY_PSOC5A) */
-
 /* APIs are not generated for P15[7:6] */
 #if !(CY_PSOC5A &&\
 	 Brake_2__PORT == 15 && ((Brake_2__MASK & 0xC0) != 0))
@@ -37,31 +31,64 @@
 *        Function Prototypes             
 ***************************************/    
 
-void    Brake_2_Write(uint8 value) ;
-void    Brake_2_SetDriveMode(uint8 mode) ;
-uint8   Brake_2_ReadDataReg(void) ;
-uint8   Brake_2_Read(void) ;
-uint8   Brake_2_ClearInterrupt(void) ;
-
+/**
+* \addtogroup group_general
+* @{
+*/
+void    Brake_2_Write(uint8 value);
+void    Brake_2_SetDriveMode(uint8 mode);
+uint8   Brake_2_ReadDataReg(void);
+uint8   Brake_2_Read(void);
+void    Brake_2_SetInterruptMode(uint16 position, uint16 mode);
+uint8   Brake_2_ClearInterrupt(void);
+/** @} general */
 
 /***************************************
 *           API Constants        
 ***************************************/
-
-/* Drive Modes */
-#define Brake_2_DM_ALG_HIZ         PIN_DM_ALG_HIZ
-#define Brake_2_DM_DIG_HIZ         PIN_DM_DIG_HIZ
-#define Brake_2_DM_RES_UP          PIN_DM_RES_UP
-#define Brake_2_DM_RES_DWN         PIN_DM_RES_DWN
-#define Brake_2_DM_OD_LO           PIN_DM_OD_LO
-#define Brake_2_DM_OD_HI           PIN_DM_OD_HI
-#define Brake_2_DM_STRONG          PIN_DM_STRONG
-#define Brake_2_DM_RES_UPDWN       PIN_DM_RES_UPDWN
-
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup driveMode Drive mode constants
+     * \brief Constants to be passed as "mode" parameter in the Brake_2_SetDriveMode() function.
+     *  @{
+     */
+        #define Brake_2_DM_ALG_HIZ         PIN_DM_ALG_HIZ
+        #define Brake_2_DM_DIG_HIZ         PIN_DM_DIG_HIZ
+        #define Brake_2_DM_RES_UP          PIN_DM_RES_UP
+        #define Brake_2_DM_RES_DWN         PIN_DM_RES_DWN
+        #define Brake_2_DM_OD_LO           PIN_DM_OD_LO
+        #define Brake_2_DM_OD_HI           PIN_DM_OD_HI
+        #define Brake_2_DM_STRONG          PIN_DM_STRONG
+        #define Brake_2_DM_RES_UPDWN       PIN_DM_RES_UPDWN
+    /** @} driveMode */
+/** @} group_constants */
+    
 /* Digital Port Constants */
 #define Brake_2_MASK               Brake_2__MASK
 #define Brake_2_SHIFT              Brake_2__SHIFT
 #define Brake_2_WIDTH              1u
+
+/* Interrupt constants */
+#if defined(Brake_2__INTSTAT)
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup intrMode Interrupt constants
+     * \brief Constants to be passed as "mode" parameter in Brake_2_SetInterruptMode() function.
+     *  @{
+     */
+        #define Brake_2_INTR_NONE      (uint16)(0x0000u)
+        #define Brake_2_INTR_RISING    (uint16)(0x0001u)
+        #define Brake_2_INTR_FALLING   (uint16)(0x0002u)
+        #define Brake_2_INTR_BOTH      (uint16)(0x0003u) 
+    /** @} intrMode */
+/** @} group_constants */
+
+    #define Brake_2_INTR_MASK      (0x01u) 
+#endif /* (Brake_2__INTSTAT) */
 
 
 /***************************************
@@ -114,13 +141,21 @@ uint8   Brake_2_ClearInterrupt(void) ;
 /* Sync Output Enable Registers */
 #define Brake_2_PRTDSI__SYNC_OUT       (* (reg8 *) Brake_2__PRTDSI__SYNC_OUT) 
 
+/* SIO registers */
+#if defined(Brake_2__SIO_CFG)
+    #define Brake_2_SIO_HYST_EN        (* (reg8 *) Brake_2__SIO_HYST_EN)
+    #define Brake_2_SIO_REG_HIFREQ     (* (reg8 *) Brake_2__SIO_REG_HIFREQ)
+    #define Brake_2_SIO_CFG            (* (reg8 *) Brake_2__SIO_CFG)
+    #define Brake_2_SIO_DIFF           (* (reg8 *) Brake_2__SIO_DIFF)
+#endif /* (Brake_2__SIO_CFG) */
 
-#if defined(Brake_2__INTSTAT)  /* Interrupt Registers */
-
-    #define Brake_2_INTSTAT                (* (reg8 *) Brake_2__INTSTAT)
-    #define Brake_2_SNAP                   (* (reg8 *) Brake_2__SNAP)
-
-#endif /* Interrupt Registers */
+/* Interrupt Registers */
+#if defined(Brake_2__INTSTAT)
+    #define Brake_2_INTSTAT            (* (reg8 *) Brake_2__INTSTAT)
+    #define Brake_2_SNAP               (* (reg8 *) Brake_2__SNAP)
+    
+	#define Brake_2_0_INTTYPE_REG 		(* (reg8 *) Brake_2__0__INTTYPE)
+#endif /* (Brake_2__INTSTAT) */
 
 #endif /* CY_PSOC5A... */
 

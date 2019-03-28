@@ -28,7 +28,7 @@
 /* `#START isr_intc` */
 //#include <Timer.h>
 //#include <LCD.h>
-#include "calibrate.h"
+//#include "calibrate.h"
 //volatile uint8 toggle_flag = 0;
 volatile uint8_t Tx0_Throttle[8];       //transmission data for throttle one and two
 volatile uint8_t Tx1_BSE[8];            //transmission data for brake 1, brake 2, steering, and error
@@ -170,6 +170,7 @@ CY_ISR(isr_Interrupt)
     /*  Place your Interrupt code here. */
     /* `#START isr_Interrupt` */
     
+    /*
     Timer_ReadStatusRegister();         //reads from status register to clear interrupt
     
     avgVoltT1 = ADC_SAR_CountsTo_Volts(throttle1/buffSize)*256 + 0.5;         //gets throttle1 voltage using average counts and converts to sevcon. +0.5 to round
@@ -214,6 +215,7 @@ CY_ISR(isr_Interrupt)
     brake2 = 0;
     steering = 0;
     buffSize = 0;
+    */
     
     /* `#END` */
 }

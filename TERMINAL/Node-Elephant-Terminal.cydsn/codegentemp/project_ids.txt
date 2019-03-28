@@ -1,8 +1,0 @@
-C:\Users\Chai Yang\Documents\PSoC Creator\USB_UART\USB_UART01\USB_UART01.cydsn\USB_UART01.cyprj|ea87a2f6-07c1-4d3a-843f-c0ff53c8af9d
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|69700c8f-3207-43d3-9edc-1b016e3deeba
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|58f4b5e1-96bf-4c6f-8c71-6fcc9732d950
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|444e3b9f-36b5-4cf8-bf81-b8a98993e87f
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|6a907a1f-ad65-4b3c-a1de-e004826abb54
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|10568396-3fef-428b-9327-ec7c07082cbc
-C:\Users\Chai Yang\Documents\Node-Elephant\TERMINAL\Node-Elephant-Terminal.cydsn\Node-Elephant-Terminal.cyprj|7ed9e6d3-2b2a-4c5d-99e7-b4394bcc9118
-C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\dev\psoc3\AnalogDevice\PSoC35AnalogDevice.cylib\PSoC35AnalogDevice.cyprj|40cc80db-0bff-4c0b-9c4c-84a36953f46a

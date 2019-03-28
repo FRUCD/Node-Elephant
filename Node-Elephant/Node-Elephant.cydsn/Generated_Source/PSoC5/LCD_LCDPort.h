@@ -1,14 +1,14 @@
 /*******************************************************************************
 * File Name: LCD_LCDPort.h  
-* Version 2.0
+* Version 2.20
 *
 * Description:
-*  This file containts Control Register function prototypes and register defines
+*  This file contains Pin function prototypes and register defines
 *
 * Note:
 *
 ********************************************************************************
-* Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+* Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions, 
 * disclaimers, and limitations in the end user license agreement accompanying 
 * the software package with which this file was provided.
@@ -22,12 +22,6 @@
 #include "cypins.h"
 #include "LCD_LCDPort_aliases.h"
 
-/* Check to see if required defines such as CY_PSOC5A are available */
-/* They are defined starting with cy_boot v3.0 */
-#if !defined (CY_PSOC5A)
-    #error Component cy_pins_v2_0 requires cy_boot v3.0 or later
-#endif /* (CY_PSOC5A) */
-
 /* APIs are not generated for P15[7:6] */
 #if !(CY_PSOC5A &&\
 	 LCD_LCDPort__PORT == 15 && ((LCD_LCDPort__MASK & 0xC0) != 0))
@@ -37,31 +31,64 @@
 *        Function Prototypes             
 ***************************************/    
 
-void    LCD_LCDPort_Write(uint8 value) ;
-void    LCD_LCDPort_SetDriveMode(uint8 mode) ;
-uint8   LCD_LCDPort_ReadDataReg(void) ;
-uint8   LCD_LCDPort_Read(void) ;
-uint8   LCD_LCDPort_ClearInterrupt(void) ;
-
+/**
+* \addtogroup group_general
+* @{
+*/
+void    LCD_LCDPort_Write(uint8 value);
+void    LCD_LCDPort_SetDriveMode(uint8 mode);
+uint8   LCD_LCDPort_ReadDataReg(void);
+uint8   LCD_LCDPort_Read(void);
+void    LCD_LCDPort_SetInterruptMode(uint16 position, uint16 mode);
+uint8   LCD_LCDPort_ClearInterrupt(void);
+/** @} general */
 
 /***************************************
 *           API Constants        
 ***************************************/
-
-/* Drive Modes */
-#define LCD_LCDPort_DM_ALG_HIZ         PIN_DM_ALG_HIZ
-#define LCD_LCDPort_DM_DIG_HIZ         PIN_DM_DIG_HIZ
-#define LCD_LCDPort_DM_RES_UP          PIN_DM_RES_UP
-#define LCD_LCDPort_DM_RES_DWN         PIN_DM_RES_DWN
-#define LCD_LCDPort_DM_OD_LO           PIN_DM_OD_LO
-#define LCD_LCDPort_DM_OD_HI           PIN_DM_OD_HI
-#define LCD_LCDPort_DM_STRONG          PIN_DM_STRONG
-#define LCD_LCDPort_DM_RES_UPDWN       PIN_DM_RES_UPDWN
-
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup driveMode Drive mode constants
+     * \brief Constants to be passed as "mode" parameter in the LCD_LCDPort_SetDriveMode() function.
+     *  @{
+     */
+        #define LCD_LCDPort_DM_ALG_HIZ         PIN_DM_ALG_HIZ
+        #define LCD_LCDPort_DM_DIG_HIZ         PIN_DM_DIG_HIZ
+        #define LCD_LCDPort_DM_RES_UP          PIN_DM_RES_UP
+        #define LCD_LCDPort_DM_RES_DWN         PIN_DM_RES_DWN
+        #define LCD_LCDPort_DM_OD_LO           PIN_DM_OD_LO
+        #define LCD_LCDPort_DM_OD_HI           PIN_DM_OD_HI
+        #define LCD_LCDPort_DM_STRONG          PIN_DM_STRONG
+        #define LCD_LCDPort_DM_RES_UPDWN       PIN_DM_RES_UPDWN
+    /** @} driveMode */
+/** @} group_constants */
+    
 /* Digital Port Constants */
 #define LCD_LCDPort_MASK               LCD_LCDPort__MASK
 #define LCD_LCDPort_SHIFT              LCD_LCDPort__SHIFT
 #define LCD_LCDPort_WIDTH              7u
+
+/* Interrupt constants */
+#if defined(LCD_LCDPort__INTSTAT)
+/**
+* \addtogroup group_constants
+* @{
+*/
+    /** \addtogroup intrMode Interrupt constants
+     * \brief Constants to be passed as "mode" parameter in LCD_LCDPort_SetInterruptMode() function.
+     *  @{
+     */
+        #define LCD_LCDPort_INTR_NONE      (uint16)(0x0000u)
+        #define LCD_LCDPort_INTR_RISING    (uint16)(0x0001u)
+        #define LCD_LCDPort_INTR_FALLING   (uint16)(0x0002u)
+        #define LCD_LCDPort_INTR_BOTH      (uint16)(0x0003u) 
+    /** @} intrMode */
+/** @} group_constants */
+
+    #define LCD_LCDPort_INTR_MASK      (0x01u) 
+#endif /* (LCD_LCDPort__INTSTAT) */
 
 
 /***************************************
@@ -114,13 +141,27 @@ uint8   LCD_LCDPort_ClearInterrupt(void) ;
 /* Sync Output Enable Registers */
 #define LCD_LCDPort_PRTDSI__SYNC_OUT       (* (reg8 *) LCD_LCDPort__PRTDSI__SYNC_OUT) 
 
+/* SIO registers */
+#if defined(LCD_LCDPort__SIO_CFG)
+    #define LCD_LCDPort_SIO_HYST_EN        (* (reg8 *) LCD_LCDPort__SIO_HYST_EN)
+    #define LCD_LCDPort_SIO_REG_HIFREQ     (* (reg8 *) LCD_LCDPort__SIO_REG_HIFREQ)
+    #define LCD_LCDPort_SIO_CFG            (* (reg8 *) LCD_LCDPort__SIO_CFG)
+    #define LCD_LCDPort_SIO_DIFF           (* (reg8 *) LCD_LCDPort__SIO_DIFF)
+#endif /* (LCD_LCDPort__SIO_CFG) */
 
-#if defined(LCD_LCDPort__INTSTAT)  /* Interrupt Registers */
-
-    #define LCD_LCDPort_INTSTAT                (* (reg8 *) LCD_LCDPort__INTSTAT)
-    #define LCD_LCDPort_SNAP                   (* (reg8 *) LCD_LCDPort__SNAP)
-
-#endif /* Interrupt Registers */
+/* Interrupt Registers */
+#if defined(LCD_LCDPort__INTSTAT)
+    #define LCD_LCDPort_INTSTAT            (* (reg8 *) LCD_LCDPort__INTSTAT)
+    #define LCD_LCDPort_SNAP               (* (reg8 *) LCD_LCDPort__SNAP)
+    
+	#define LCD_LCDPort_0_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__0__INTTYPE)
+	#define LCD_LCDPort_1_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__1__INTTYPE)
+	#define LCD_LCDPort_2_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__2__INTTYPE)
+	#define LCD_LCDPort_3_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__3__INTTYPE)
+	#define LCD_LCDPort_4_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__4__INTTYPE)
+	#define LCD_LCDPort_5_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__5__INTTYPE)
+	#define LCD_LCDPort_6_INTTYPE_REG 		(* (reg8 *) LCD_LCDPort__6__INTTYPE)
+#endif /* (LCD_LCDPort__INTSTAT) */
 
 #endif /* CY_PSOC5A... */
 
