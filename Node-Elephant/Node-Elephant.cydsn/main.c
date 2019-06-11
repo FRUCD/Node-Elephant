@@ -56,6 +56,8 @@ CY_ISR(isr_CAN_Handler){
     }
     int16 temp_throttle = 0;
     int16 temp_brake = 0;
+    int brake_range = brakeMax-brakeMin;
+    int throttle_range = throttle1Max-throttle1Min;
     
     //send PDO1 (throttle)
     // subract dead zone 5%
@@ -79,19 +81,22 @@ CY_ISR(isr_CAN_Handler){
     }
     temp_brake = (int32)(temp_brake-brakeMin)*100 / (brakeMax-brakeMin);
     
-    
     //check EV2.5.1
-    
-    if (temp_throttle < 0x666 && temp_brake==0){
+    if (temp_throttle < throttle_range * 0.25 && temp_brake==0){
         force_stop = false;
     }
-    
+     
+    if(temp_brake > 0 && temp_throttle > throttle_range * 0.25) {
+        force_stop = true;
+        temp_throttle = 0;
+    }
     
     //check EV2.5
     if (temp_brake>0 && temp_throttle>0x1FFF){
         force_stop = true;
         temp_throttle = 0;
     }
+
     
     // If brake is below threshold
     if (ADC_SAR_CountsTo_Volts(brake) < .4)
@@ -99,8 +104,6 @@ CY_ISR(isr_CAN_Handler){
         force_stop = true;   
         temp_throttle = 0;
     }
-    
-
     
     if (force_stop){
         temp_throttle = 0;
@@ -115,7 +118,8 @@ CY_ISR(isr_CAN_Handler){
         temp_throttle = 0;
     }
     
-    can_buffer[0]= DIFF_FAULT_BIT;
+    // when this is received in dash turns into pedalOK
+    can_buffer[0]= DIFF_FAULT_BIT;      
     can_buffer[1]= (uint16)(temp_throttle)>>8 & 0xff;
     can_buffer[2]= (uint16)(temp_throttle) & 0xff;
     can_buffer[3]= 0x00;
