@@ -50,6 +50,8 @@ volatile uint8_t force_stop = false;
 
 void update_ADC_SAR();
 
+// data processing and error checking occurs in interrupt service routine
+// 
 CY_ISR(isr_CAN_Handler){
     if (pedal_state != DRIVING){
         return;
@@ -60,9 +62,9 @@ CY_ISR(isr_CAN_Handler){
     int throttle_range = throttle1Max-throttle1Min;
     
     //send PDO1 (throttle)
-    // subract dead zone 5%
-    temp_throttle = throttle1 - 0;//((throttle1Max-throttle1Min)/20);
+    temp_throttle = throttle1;//((throttle1Max-throttle1Min)/20);
 
+    // check boundry conditions of throttle input
     if (temp_throttle>throttle1Max){
         temp_throttle=throttle1Max;
     }
@@ -86,6 +88,7 @@ CY_ISR(isr_CAN_Handler){
         force_stop = false;
     }
      
+    // check for soft BSPD
     if(temp_brake > 0 && temp_throttle > throttle_range * 0.25) {
         force_stop = true;
         temp_throttle = 0;
@@ -96,7 +99,6 @@ CY_ISR(isr_CAN_Handler){
         force_stop = true;
         temp_throttle = 0;
     }
-
     
     // If brake is below threshold
     if (ADC_SAR_CountsTo_Volts(brake) < .4)
@@ -130,8 +132,7 @@ CY_ISR(isr_CAN_Handler){
     CAN_SendMsgPDO1();
     
     //send PDO2 (brake)
-
-    can_buffer[0]= (temp_brake>10 ? 0x01:0x00);
+    can_buffer[0]= (temp_brake>10 ? 0x01:0x00);     // must slam brake to enter drive
     can_buffer[1]= (uint16)(temp_brake)>>8 & 0xff;
     can_buffer[2]= (uint16)(temp_brake) & 0xff;
     can_buffer[3]= 0x00;
@@ -153,6 +154,7 @@ CY_ISR(isr_cali_done_Handler){
     calibration_done_flag=true;
 }
 
+// rules state that both sensors must be within 10% of each other
 bool check_differential(){
     //check throttle
     // calculate percentage of throttle 1
@@ -183,6 +185,7 @@ bool check_differential(){
 
 }
 
+// read previous calibration values from ROM
 void restore_EEPROM(){
     // get throttleMax
     throttle1Max = (int16)EEPROM_get(0x0, 0);
@@ -199,6 +202,7 @@ void restore_EEPROM(){
 
 }
 
+// write new pedal calibration values to ROM on psoc
 void save_EEPROM(){
     // save throttleMax
     EEPROM_set(throttle1Max, 0, 0);
