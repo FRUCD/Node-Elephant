@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "EEPROM_util.h"
+#include <stdlib.h>
 
 
 
@@ -47,6 +48,7 @@ volatile pedal_state_t pedal_state = INIT;
 uint8_t DIFF_FAULT_BIT=0x00;
 volatile uint8_t calibration_done_flag=false;
 volatile uint8_t force_stop = false;
+volatile uint8_t stop_by_soft_bspd;
 
 void update_ADC_SAR();
 
@@ -58,6 +60,7 @@ CY_ISR(isr_CAN_Handler){
     }
     int16 temp_throttle = 0;
     int16 temp_brake = 0;
+    stop_by_soft_bspd = 1;
     int brake_range = brakeMax-brakeMin;
     int throttle_range = throttle1Max-throttle1Min;
     
@@ -71,7 +74,7 @@ CY_ISR(isr_CAN_Handler){
     if (temp_throttle<throttle1Min){
         temp_throttle=throttle1Min;
     }
-    temp_throttle = (int32)(temp_throttle-throttle1Min)*0x7FFF / (throttle1Max-throttle1Min);//((throttle1Max-throttle1Min)/16));
+    temp_throttle = (int32)(temp_throttle-throttle1Min)*100 / throttle_range;//((throttle1Max-throttle1Min)/16));
     
     // subtract dead zone 15%
     temp_brake = brake -((brakeMax-brakeMin)/6);
@@ -81,17 +84,13 @@ CY_ISR(isr_CAN_Handler){
     if (temp_brake<brakeMin){
         temp_brake=brakeMin;
     }
-    temp_brake = (int32)(temp_brake-brakeMin)*100 / (brakeMax-brakeMin);
-    
-    //check EV2.5.1
-    if (temp_throttle < throttle_range * 0.25 && temp_brake==0){
-        force_stop = false;
-    }
+    temp_brake = (int32)(temp_brake-brakeMin)*100 / brake_range;
      
     // check for soft BSPD
-    if(temp_brake > 0 && temp_throttle > throttle_range * 0.25) {
+    if(temp_brake > 0 && temp_throttle > 25) {
         force_stop = true;
         temp_throttle = 0;
+        stop_by_soft_bspd = 0;
     }
     
     //check EV2.5
@@ -136,7 +135,7 @@ CY_ISR(isr_CAN_Handler){
     can_buffer[1]= (uint16)(temp_brake)>>8 & 0xff;
     can_buffer[2]= (uint16)(temp_brake) & 0xff;
     can_buffer[3]= 0x00;
-    can_buffer[4]= 0x00;
+    can_buffer[4]= (uint8)(stop_by_soft_bspd);
     can_buffer[5]= 0x00;
     can_buffer[6]= (uint16)(brake1)>>8 &0xff;
     can_buffer[7]= (uint16)(brake1) & 0xff;
