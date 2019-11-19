@@ -61,6 +61,7 @@ CY_ISR(isr_CAN_Handler){
     int16 temp_throttle = 0;
     int16 temp_brake = 0;
     stop_by_soft_bspd = 1;
+    
     int brake_range = brakeMax-brakeMin;
     int throttle_range = throttle1Max-throttle1Min;
     
@@ -74,20 +75,12 @@ CY_ISR(isr_CAN_Handler){
     if (temp_throttle<throttle1Min){
         temp_throttle=throttle1Min;
     }
-    temp_throttle = (int32)(temp_throttle-throttle1Min)*100 / throttle_range;//((throttle1Max-throttle1Min)/16));
-    
-    // subtract dead zone 15%
-    temp_brake = brake -((brakeMax-brakeMin)/6);
-    if (temp_brake>brakeMax){
-        temp_brake=brakeMax;
-    }
-    if (temp_brake<brakeMin){
-        temp_brake=brakeMin;
-    }
-    temp_brake = (int32)(temp_brake-brakeMin)*100 / brake_range;
+    temp_throttle = (int32)(temp_throttle-throttle1Min)*0x7FFF / throttle_range;//((throttle1Max-throttle1Min)/16));
+ 
+    temp_brake = (int32)(brake-brakeMin)*100 / brake_range;
      
     // check for soft BSPD
-    if(temp_brake > 0 && temp_throttle > 25) {
+    if(temp_brake > 0 && temp_throttle > (0.25 * 0x7FFF)) {
         force_stop = true;
         temp_throttle = 0;
         stop_by_soft_bspd = 0;
