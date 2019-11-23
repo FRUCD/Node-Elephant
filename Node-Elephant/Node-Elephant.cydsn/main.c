@@ -58,9 +58,10 @@ CY_ISR(isr_CAN_Handler){
     if (pedal_state != DRIVING){
         return;
     }
+    
+    stop_by_soft_bspd = false;
     int16 temp_throttle = 0;
     int16 temp_brake = 0;
-    stop_by_soft_bspd = 1;
     int brake_range = brakeMax-brakeMin;
     int throttle_range = throttle1Max-throttle1Min;
     
@@ -87,19 +88,12 @@ CY_ISR(isr_CAN_Handler){
     
     temp_brake = (int32)(temp_brake-brakeMin)*100 / brake_range;
      
-    // check for soft BSPD
-    if(temp_brake > 0 && temp_throttle > (0.25 * 0x7FFF)) {
-        force_stop = true;
+    // check for soft BSPD -- EV 2.5
+    if(temp_brake > 0 && temp_throttle > (0x7FFF >> 2)) {
         temp_throttle = 0;
-        stop_by_soft_bspd = 0;
+        stop_by_soft_bspd = true;
     }
-    
-    //check EV2.5
-    if (temp_brake>0 && temp_throttle>0x1FFF){
-        force_stop = true;
-        temp_throttle = 0;
-    }
-    
+
     // If brake is below threshold
     if (ADC_SAR_CountsTo_Volts(brake) < .4)
     {
