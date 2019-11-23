@@ -59,7 +59,6 @@ CY_ISR(isr_CAN_Handler){
         return;
     }
     
-    stop_by_soft_bspd = false;
     int16 temp_throttle = 0;
     int16 temp_brake = 0;
     int brake_range = brakeMax-brakeMin;
@@ -87,11 +86,18 @@ CY_ISR(isr_CAN_Handler){
     }
     
     temp_brake = (int32)(temp_brake-brakeMin)*100 / brake_range;
+    
+    //check EV3.4.2 to regain throttle control
+    if (temp_throttle < (0x7FFF * 0.05)){
+        force_stop = false;
+        stop_by_soft_bspd = false;
+    }
      
-    // check for soft BSPD -- EV 2.5
+    // check for soft BSPD to cut motor power -- EV 3.4.1
     if(temp_brake > 0 && temp_throttle > (0x7FFF >> 2)) {
         temp_throttle = 0;
         stop_by_soft_bspd = true;
+        force_stop = true;
     }
 
     // If brake is below threshold
