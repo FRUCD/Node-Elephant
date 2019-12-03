@@ -76,16 +76,7 @@ CY_ISR(isr_CAN_Handler){
     }
     temp_throttle = (int32)(temp_throttle-throttle1Min)*0x7FFF / throttle_range;//((throttle1Max-throttle1Min)/16));
     
-    // subtract dead zone 15% this is the old method, which doesnt make any sense to me
-    temp_brake = brake -((brakeMax-brakeMin)/6);
-    if (temp_brake>brakeMax){
-        temp_brake=brakeMax;
-    }
-    if (temp_brake<brakeMin){
-        temp_brake=brakeMin;
-    }
-    
-    temp_brake = (int32)(temp_brake-brakeMin)*100 / brake_range;
+    temp_brake = (int32)(brake-brakeMin)*100 / brake_range;
     
     //check EV3.4.2 to regain throttle control
     if (temp_throttle < (0x7FFF * 0.05)){
